@@ -289,6 +289,28 @@ int tcp_scan_port(int sock, char* buffer, struct iphdr *ip, struct tcphdr *tcp, 
     return 0;
 }
 
+int get_ip(char *ip, string hostname)
+{
+    //regex matches only correct IPv4 addresses (0-255.0-255.0-255.0-255)
+    if(regex_match(hostname, regex("^((\\d\\d?)|(1\\d?\\d?)|(2[01234]\\d?)|(25[012345]?))\\.((\\d\\d?)|(1\\d?\\d?)|(2[01234]\\d?)|(25[012345]?))\\.((\\d\\d?)|(1\\d?\\d?)|(2[01234]\\d?)|(25[012345]?))\\.((\\d\\d?)|(1\\d?\\d?)|(2[01234]\\d?)|(25[012345]?))$")))
+    {
+        strcpy(ip, hostname.c_str());
+        return 0;
+    }
+    struct hostent *entity;
+    if((entity = gethostbyname(hostname.c_str())) == NULL)
+    {
+        cerr << "Invalid hostname or IP: " << hostname << endl;
+        return 1;
+    }
+    struct in_addr **addresses = (struct in_addr **) entity->h_addr_list;
+    if(addresses[0] == NULL)
+    {
+        cerr << "Error retrieving address of: " << hostname << endl;
+    }
+    strcpy(ip, inet_ntoa(*addresses[0]));
+    return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -296,6 +318,7 @@ int main(int argc, char *argv[])
     string ports_tcp;
     string ports_udp;
     string target;
+    char ip_address[16];
 
     int rc;
     if((rc = get_args(argc, argv, ports_tcp, ports_udp, target)))
@@ -307,8 +330,13 @@ int main(int argc, char *argv[])
     cout << "tcp: " << ports_tcp << endl 
          << "udp: " << ports_udp << endl
          << "target: " << target << endl;
-
-    //regex r(target); // \d.\d?\d?\.\d.\d?\d?\.\d.\d?\d?\.\d.\d?\d?\
+    
+    if(get_ip(ip_address, target) != 0)
+    {
+        cerr << "Could not get IP of: " << target << endl;
+        return 1;
+    }
+    cout << "IP: " << ip_address << endl;
 
     //networking part
     
@@ -320,7 +348,7 @@ int main(int argc, char *argv[])
     int sock;
 
     memset(buffer, 0, BUFFER_SIZE);
-    if(tcp_scan_init(sock, ip, tcp, src, target.c_str()) != 0)
+    if(tcp_scan_init(sock, ip, tcp, src, ip_address) != 0)
     {
         cerr << "Could not init scan" << endl;
         return 1;
