@@ -33,18 +33,13 @@ int ipv4_scan(string target, string ports_tcp, string ports_udp, char *ip_addres
 
     //determining the source IP
     char src_ip[16];
-    if(tcp_scan_port(sock, buffer, ip, tcp, src, 80))
-    {
-        cerr << "Could not send packet to determine source IP address";
-        close(sock);
-        return 1;
-    }
-    if((ip->saddr = get_source_ip(src_ip, handle, error_buffer, ip_address)) == 0)
+    if(get_source_ip(src_ip, ip_address))
     {
         cerr << "Could not get source ip address" << endl;
         close(sock);
         return 1;
     }
+    inet_pton(AF_INET, src_ip, &ip->saddr);
 
     cout << "Interesting ports on " << target << "(" << ip_address << "):" << endl;
     cout << "PORT\tSTATE" << endl;
@@ -111,7 +106,7 @@ int tcp_scan_init(int &sock, struct iphdr * &ip, struct tcphdr * &tcp, sockaddr_
     dst.sin_family = AF_INET;
 
     // Source port
-    dst.sin_port = htons(1234);
+    dst.sin_port = htons(0);
 
     inet_pton(AF_INET, address, &(dst.sin_addr.s_addr));
 
@@ -203,13 +198,12 @@ int get_ip(char *ip, string hostname)
     struct hostent *entity;
     if((entity = gethostbyname(hostname.c_str())) == NULL)
     {
-        cerr << "Invalid hostname or IP: " << hostname << endl;
         return 1;
     }
     struct in_addr **addresses = (struct in_addr **) entity->h_addr_list;
     if(addresses[0] == NULL)
     {
-        cerr << "Error retrieving address of: " << hostname << endl;
+        return 1;
     }
     strcpy(ip, inet_ntoa(*addresses[0]));
     return 0;
@@ -225,7 +219,7 @@ pcap_t *pcap_handle_init(char *error_buffer)
     if(pcap_set_immediate_mode(handle, 1) != 0)
         return NULL;
 
-    if(pcap_set_timeout(handle, 4000) != 0)
+    if(pcap_set_timeout(handle, 500) != 0)
         return NULL;
 
     if(pcap_activate(handle) != 0)
@@ -284,36 +278,44 @@ int get_answer_tcp(pcap_t *handle, char *error, char *ip, int port)
     return 0;
 }
 
-unsigned int get_source_ip(char * src_ip, pcap_t *handle, char *error, char *dest_ip)
+unsigned int get_source_ip(char * src_ip, char *dest_ip)
 {
-    struct pcap_pkthdr packet_header;
-    int src_addr;
-    while(1)
+    int socke = socket(AF_INET, SOCK_DGRAM, 0);
+    if(socke == -1)
     {
-        //get next captured packet
-        const unsigned char *packet = pcap_next(handle, &packet_header);
-        if(packet == NULL)
-        {
-            return 0;
-        }
-
-        //determine the beginings of headers
-        struct ether_header *eth_hdr = (struct ether_header *) packet;
-        int eth_hdr_len = 16;
-        struct iphdr *ip_header = (struct iphdr *) (packet + eth_hdr_len);
-        int ip_header_len = (*((char *)ip_header)) & 0x0F;
-        ip_header_len *= 4;
-        struct tcphdr *tcp_header = (struct tcphdr *) (packet + eth_hdr_len + ip_header_len);
-
-        struct in_addr addr;
-        addr.s_addr = ip_header->daddr;
-        if(!strcmp(inet_ntoa(addr), dest_ip))
-        {
-            addr.s_addr = ip_header->saddr;
-            strcpy(src_ip, inet_ntoa(addr));
-            return ip_header->saddr;
-        }
+        cerr << "could not create socket" << endl;
+        return 1;
     }
+    sockaddr_in addr;
+    struct sockaddr_in name;
+    socklen_t len = sizeof(addr);
+
+    if(inet_pton(AF_INET, dest_ip, &addr) != 1)
+    {
+        cout << "conversion error" <<  endl;
+        return 1;
+    }
+    addr.sin_family = AF_INET;
+
+    if(connect(socke, (struct sockaddr *) &addr, sizeof(addr)))
+    {
+        cerr << "Could not connect to host: " << errno << endl;
+        perror(NULL);
+        return 1;
+    }
+
+    if(getsockname(socke, (struct sockaddr *) &name, &len))
+    {
+        cerr << "Could not get sockname" << endl;
+        return 1;
+    }
+
+    if(inet_ntop(AF_INET, &name.sin_addr, src_ip, 16) == NULL)
+    {
+        cerr << "Conversion error" << endl;
+        return 1;
+    }
+    close(socke);
     return 0;
 }
 
@@ -358,7 +360,10 @@ int tcp_scan(int sock, char *buffer, struct iphdr *ip, struct tcphdr *tcp, struc
         int result = get_answer_tcp(handle, error_buffer, ip_address, port);
 
         if(result == 1)
+        {
+            tcp_scan_port(sock, buffer, ip, tcp, src, port);
             result = get_answer_tcp(handle, error_buffer, ip_address, port);
+        }
 
         if(result == 1)
             cout << port << "/tcp\tfiltered" << endl;

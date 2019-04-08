@@ -117,13 +117,18 @@ int main(int argc, char *argv[])
 #endif
     
     //figure out the targets IP address
-    if(ipv4::get_ip(ip_address, target) != 0)
+    if(ipv4::get_ip(ip_address, target) == 0)
     {
-        cerr << "Could not get IP of: " << target << endl;
-        return 1;
+	return ipv4::ipv4_scan(target, ports_tcp, ports_udp, ip_address);
+    }
+    else if(ipv6::get_ip(ip_address, target) == 0)
+    {
+        return ipv6::ipv6_scan(target, ports_tcp, ports_udp, ip_address);
     }
     else
-	return ipv4::ipv4_scan(target, ports_tcp, ports_udp, ip_address);
+    {
+        cerr << "Could not get the IP address of: " << target << endl;
+    }
 
     return 0;
 }

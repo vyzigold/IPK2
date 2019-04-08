@@ -92,7 +92,7 @@ int get_answer_tcp(pcap_t *handle, char *error, char *ip, int port);
  * @param dest_ip IP of the target
  * return Returns the IP as an network order integer or 0 on failure
  */
-unsigned int get_source_ip(char * src_ip, pcap_t *handle, char *error, char *dest_ip);
+unsigned int get_source_ip(char * src_ip, char *dest_ip);
 
 /**
  * @brief Does the TCP scan

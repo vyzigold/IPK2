@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <string>
-#include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-#include <netinet/ip_icmp.h>
+#include <netinet/icmp6.h>
 #include <netdb.h>
 #include <string.h>
 #include <regex>
@@ -17,7 +17,6 @@
 #include <net/ethernet.h>
 
 #include "common.h"
-#include "ipv4.h"
 
 using namespace std;
 
@@ -45,7 +44,7 @@ unsigned short csum(unsigned short *buf, int len);
  * @param src_address Address of interface to scan from
  * @return Returns 0 if everything got successfuly initialized othervise returns non 0
  */
-int tcp_scan_init(int &sock, struct iphdr * &ip, struct tcphdr * &tcp, sockaddr_in &dst, const char* address, const char *src_address);
+int tcp_scan_init(int &sock, struct ip6_hdr * &ip, struct tcphdr * &tcp, sockaddr_in6 &dst, const char* address, const char *src_address);
 
 /**
  * @brief Sends one SYN packet to the target
@@ -57,7 +56,7 @@ int tcp_scan_init(int &sock, struct iphdr * &ip, struct tcphdr * &tcp, sockaddr_
  * @param port Port to scan
  * @return Returns 0 for success or non 0 for failure
  */
-int tcp_scan_port(int sock, char* buffer, struct iphdr *ip, struct tcphdr *tcp, sockaddr_in src, int port);
+int tcp_scan_port(int sock, char* buffer, struct ip6_hdr *ip, struct tcphdr *tcp, sockaddr_in6 src, int port);
 
 /**
  * @brief Finds IP of the target
@@ -92,7 +91,7 @@ int get_answer_tcp(pcap_t *handle, char *error, char *ip, int port);
  * @param dest_ip IP of the target
  * return Returns the IP as an network order integer or 0 on failure
  */
-unsigned int get_source_ip(char * src_ip, pcap_t *handle, char *error, char *dest_ip);
+int get_source_ip(char *src_ip, char *dest_ip);
 
 /**
  * @brief Does the TCP scan
@@ -106,7 +105,7 @@ unsigned int get_source_ip(char * src_ip, pcap_t *handle, char *error, char *des
  * @param handle Initialized libpcap handle for getting responses
  * @return Returns 0 for success and non-zero for failure
  */
-int tcp_scan(int sock, char *buffer, struct iphdr *ip, struct tcphdr *tcp, struct sockaddr_in src, char *ip_address, string ports_tcp, pcap_t *handle);
+int tcp_scan(int sock, char *buffer, struct ip6_hdr *ip, struct tcphdr *tcp, struct sockaddr_in6 src, char *ip_address, string ports_tcp, pcap_t *handle);
 
 /**
  * @brief Sends one UDP datagram to the target
@@ -118,7 +117,7 @@ int tcp_scan(int sock, char *buffer, struct iphdr *ip, struct tcphdr *tcp, struc
  * @param port Port to scan
  * @return Returns 0 for success or non 0 for failure
  */
-int udp_scan_port(int sock, char* buffer, struct iphdr *ip, struct udphdr *udp, sockaddr_in src, int port);
+int udp_scan_port(int sock, char* buffer, struct ip6_hdr *ip, struct udphdr *udp, sockaddr_in6 src, int port);
 
 /**
  * @brief Opens socket and initializes every structure needed for packet construction everything else should be initialized from packet sent via TCP to obtain source address
@@ -149,5 +148,5 @@ int get_answer_udp(pcap_t *handle, char *error, char *ip, int port);
  * @param handle Initialized libpcap handle for getting responses
  * @return Returns 0 for success and non-zero for failure
  */
-int udp_scan(char *buffer, struct iphdr *ip, struct sockaddr_in src, char *ip_address, string ports_udp, pcap_t *handle);
+int udp_scan(char *buffer, struct ip6_hdr *ip, struct sockaddr_in6 src, char *ip_address, string ports_udp, pcap_t *handle);
 }
