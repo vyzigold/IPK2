@@ -4,7 +4,7 @@ using namespace std;
 
 namespace ipv4 {
 
-int ipv4_scan(string target, string ports_tcp, string ports_udp, char *ip_address)
+int ipv4_scan(string target, string ports_tcp, string ports_udp, char *ip_address, char const *interface_address)
 {
 
     //start capturing packets
@@ -12,7 +12,7 @@ int ipv4_scan(string target, string ports_tcp, string ports_udp, char *ip_addres
     pcap_t *handle = pcap_handle_init(error_buffer);
     if(handle == NULL)
     {
-        cerr << "Could not initialze structures needed for getting incomming packets" << error_buffer;
+        cerr << "Could not initialze structures needed for getting incomming packets. Maybe you forgot sudo." << error_buffer;
         return 1;
     }
 
@@ -39,6 +39,8 @@ int ipv4_scan(string target, string ports_tcp, string ports_udp, char *ip_addres
         close(sock);
         return 1;
     }
+    if(strcmp(interface_address, ""))
+        strcpy(src_ip, interface_address);
     inet_pton(AF_INET, src_ip, &ip->saddr);
 
     cout << "Interesting ports on " << target << "(" << ip_address << "):" << endl;

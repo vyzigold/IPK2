@@ -8,7 +8,7 @@ using namespace std;
 
 namespace ipv6 {
 
-int ipv6_scan(string target, string ports_tcp, string ports_udp, char *ip_address)
+int ipv6_scan(string target, string ports_tcp, string ports_udp, char *ip_address, char const *interface_address)
 {
     //start capturing packets
     char error_buffer[PCAP_ERRBUF_SIZE];
@@ -37,12 +37,6 @@ int ipv6_scan(string target, string ports_tcp, string ports_udp, char *ip_addres
 
     //determining the source IP
     char src_ip[40];
-    //if(tcp_scan_port(sock, buffer, ip, tcp, src, 80))
-    //{
-    //    cerr << "Could not send packet to determine source IP address";
-    //    close(sock);
-    //    return 1;
-    //}
 
     if(get_source_ip(src_ip, ip_address))
     {
@@ -50,6 +44,8 @@ int ipv6_scan(string target, string ports_tcp, string ports_udp, char *ip_addres
         close(sock);
         return 1;
     }
+    if(strcmp(interface_address, ""))
+        strcpy(src_ip, interface_address);
 
     inet_pton(AF_INET6, src_ip, &ip->ip6_src);
 

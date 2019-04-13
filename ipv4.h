@@ -23,7 +23,7 @@ using namespace std;
 
 namespace ipv4 {
 
-int ipv4_scan(string target, string ports_tcp, string ports_udp, char * ip_address);
+int ipv4_scan(string target, string ports_tcp, string ports_udp, char * ip_address, char const *interface_address);
 
 //checksum function from https://www.linuxquestions.org/questions/programming-9/raw-sockets-checksum-function-56901/
 /**
