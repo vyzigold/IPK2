@@ -15,6 +15,7 @@
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
+#include <ifaddrs.h>
 
 #include "common.h"
 #include "ipv4.h"
@@ -136,22 +137,25 @@ int get_interface_IPs(string interface, string &ip4, string &ip6)
     memset(&ifr, 0, sizeof(struct ifreq));
 
     //IPv6
-    sock = socket(AF_INET6, SOCK_DGRAM, 0);
-    if(sock == -1)
-    {
-        cerr << "Could not create socket." << endl;
-        return 1;
-    }
-
-    ifr.ifr_addr.sa_family = AF_INET6;
-
-    memcpy(ifr.ifr_name, interface.c_str(), interface.size());
-
-    if(ioctl(sock, SIOCGIFADDR, &ifr) != -1)
+    struct ifaddrs *addresses;
+    if(!getifaddrs(&addresses))
     {
         char buffer[40];
-        inet_ntop(AF_INET6, &((struct sockaddr_in6 *)&ifr.ifr_addr)->sin6_addr, buffer, 40);
-        ip6 = buffer;
+        while(addresses != NULL)
+        {
+            if(addresses->ifa_addr->sa_family == AF_INET6 && interface == addresses->ifa_name)
+            {
+                inet_ntop(AF_INET6, 
+                        &((struct sockaddr_in6 *)addresses->ifa_addr)->sin6_addr, 
+                        buffer, 40);
+                if(strncmp(buffer,"fe80:", 5) && (strncmp(buffer, "::1", 3) || interface == "lo"))
+                {
+                    ip6 = buffer;
+                    break;
+                }
+            }
+            addresses = addresses->ifa_next;
+        }
     }
 
     close(sock);
@@ -224,6 +228,11 @@ int main(int argc, char *argv[])
     else if(strcmp(target_ip6_address, "") && (interface != "") == (ip6 != ""))
     {
         return ipv6::ipv6_scan(target, ports_tcp, ports_udp, target_ip6_address, ip6.c_str());
+    }
+    else
+    {
+        cerr << "Couldn't match IP versions of the target and source interface" << endl;
+        return 1;
     }
 
     return 0;

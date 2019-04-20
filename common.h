@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-#define DEBUGG_INFO
+//#define DEBUGG_INFO
 #define BUFFER_SIZE 200
 
 using namespace std;

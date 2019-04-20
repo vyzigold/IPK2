@@ -302,7 +302,6 @@ unsigned int get_source_ip(char * src_ip, char *dest_ip)
     if(connect(socke, (struct sockaddr *) &addr, sizeof(addr)))
     {
         cerr << "Could not connect to host: " << errno << endl;
-        perror(NULL);
         return 1;
     }
 

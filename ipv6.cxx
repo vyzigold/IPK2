@@ -38,12 +38,13 @@ int ipv6_scan(string target, string ports_tcp, string ports_udp, char *ip_addres
     //determining the source IP
     char src_ip[40];
 
-    if(get_source_ip(src_ip, ip_address))
-    {
-        cerr << "Could not get source ip address" << endl;
-        close(sock);
-        return 1;
-    }
+    if(strcmp(interface_address, "::1"))
+        if(get_source_ip(src_ip, ip_address))
+        {
+            cerr << "Could not get source ip address" << endl;
+            close(sock);
+            return 1;
+        }
     if(strcmp(interface_address, ""))
         strcpy(src_ip, interface_address);
 
@@ -252,13 +253,11 @@ int get_ip(char *ip, string hostname)
 
     if((rc = getaddrinfo(hostname.c_str(), NULL, &params, &result)))
     {
-        cerr << "get info error: " << rc << endl;
         return 1;
     }
 
     if(inet_ntop(AF_INET6, &result->ai_addr->sa_data[6], ip, 40) == NULL)
     {
-        cerr << "inet_ntop error" << endl;
         return 1;
     }
     return 0;
