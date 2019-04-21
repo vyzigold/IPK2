@@ -1,0 +1,7 @@
+Pro přeložení projektu je nutné první nainstalovat knihovnu pcap.
+Přeložení lze provézt příkazem make, nebo make all, nebo make ipk-scan.
+Pro úklid souborů po překladu lze použít make clean.
+Projekt se spouští následovně: ./ipk-scan {-i <interface>} -pu <port-ranges> -pt <port-ranges> [<domain-name> | <IP-address>]
+Pro spuštění je potřeba mít administrátorská oprávnění.
+
+Projekt je implementován plně, bez jakýchkoliv mě známých omezení.
